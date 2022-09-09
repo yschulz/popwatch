@@ -2,32 +2,149 @@ import 'package:flutter/material.dart';
 
 
 void main(List<String> args) {
-  runApp(MyApp());
+  runApp(PopWatch());
 
 }
 
-class MyApp extends StatelessWidget {
-  MyApp({super.key});
+class PopWatch extends StatelessWidget {
+  const PopWatch({super.key});
 
-  var armed = false;
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: PopWatchHome(),
+    );
+  }
+}
+
+
+class PopWatchHome extends StatefulWidget {
+  PopWatchHome({super.key});
+
+  @override
+  _PopWatchHomeState createState() => _PopWatchHomeState();
+}
+
+class _PopWatchHomeState extends State<PopWatchHome> {
+
+  var _armed = false;
+  var _sensitivity = 100.0;
 
   void arming() {
-    if(armed) {
-      armed = false;
+    if(_armed) {
+      _armed = false;
     }
     else {
-      armed = true;
+      _armed = true;
     }
+  }
+
+  void setSensitivity(sensitivity) {
+    setState(() {
+      _sensitivity = sensitivity;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: Scaffold(
+    return Scaffold(
       appBar: AppBar(title: Text('PopWatch'),), 
-      body: Column(
-        children: [
-          MaterialButton(child: Text('arm'), onPressed: arming, color: Color.fromARGB(0, 0, 0, 0),),
-      ],),
+      backgroundColor: Color.fromARGB(255, 31, 31, 31),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: RawMaterialButton(
+                      onPressed: arming,
+                      shape: const StadiumBorder(side: BorderSide(color: Color.fromARGB(255, 3, 70, 9))),
+                      child: const Text('Arm',
+                        style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10.0,),
+                  Expanded(
+                    child: RawMaterialButton(
+                      onPressed: () {},
+                      shape: const StadiumBorder(side: BorderSide(color: Color.fromARGB(255, 48, 75, 165))),
+                      child: const Text('Reset',
+                        style: TextStyle(color:  Color.fromARGB(255, 255, 255, 255))
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                height: 150.0,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(127, 122, 122, 122),
+                  borderRadius: BorderRadius.circular(6.0)
+                ),
+                child: Center(
+                  child: Text('00:00:00',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 255, 255, 255),
+                      fontSize: 82.0,
+                      fontWeight: FontWeight.w600
+                      ),
+                  ),
+                ),
+              ),
+              Container(
+                height: 70.0,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(127, 122, 122, 122),
+                  borderRadius: BorderRadius.circular(6.0)
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 6.0),
+                      Text('Sensitivity',
+                        style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                      ),
+                      Slider(min: 0.0, max: 100.0, value: _sensitivity, onChanged: setSensitivity)
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 70.0,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(127, 122, 122, 122),
+                  borderRadius: BorderRadius.circular(6.0)
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 6.0),
+                      Text('Gain',
+                        style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                height: 200.0,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(127, 122, 122, 122),
+                  borderRadius: BorderRadius.circular(6.0)
+                ),
+              ),
+            ],
+          ),
+        ), 
       ),
     );
   }
