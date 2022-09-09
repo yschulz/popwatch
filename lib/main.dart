@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 
@@ -26,8 +28,97 @@ class PopWatchHome extends StatefulWidget {
 
 class _PopWatchHomeState extends State<PopWatchHome> {
 
-  var _armed = false;
-  var _sensitivity = 100.0;
+  int milliseconds = 0;
+  int seconds = 0;
+  int minutes = 0;
+  
+  String digitMilliseconds = '000';
+  String digitSeconds = '00';
+  String digitMinutes = '00';
+
+  Timer? timer;
+  bool started = false;
+  List logs = [];
+
+  bool _armed = false;
+  double _sensitivity = 100.0;
+
+  void stop() {
+    timer!.cancel();
+    setState(() {
+      started = false;
+    });
+  }
+
+  void reset() {
+    logCycle();
+    timer!.cancel();
+    setState(() {
+      milliseconds = 0;
+      seconds = 0;
+      minutes = 0;
+
+      digitMilliseconds = '000';
+      digitSeconds = '00';
+      digitMinutes = '00';
+
+      started = false;
+    });
+  }
+
+  void logCycle() {
+    String cycle = "$digitMinutes:$digitSeconds:$digitMilliseconds";
+    setState(() {
+      logs.add(cycle);
+    });
+  }
+
+  void deleteElementCycle(index) {
+    setState(() {
+      logs.removeAt(index);
+    });
+  }
+
+  void start() {
+    started = true;
+    timer = Timer.periodic(Duration(milliseconds: 1), (timer) {
+      int localMilliseconds = milliseconds + 1;
+      int localSeconds = seconds;
+      int localMinutes = minutes;
+
+      if(localMilliseconds > 999) {
+        if(localSeconds > 59) {
+          localMinutes++;
+          localSeconds = 0;
+        }
+        else {
+          localSeconds++;
+          localMilliseconds = 0;
+        }
+      }
+
+      setState(() {
+        milliseconds = localMilliseconds;
+        seconds = localSeconds;
+        minutes = localMinutes;
+
+        if(milliseconds >= 10) {
+          if(milliseconds >= 100) {
+            digitMilliseconds = "$milliseconds";
+          }
+          else {
+            digitMilliseconds = "0$milliseconds";
+          }
+        }
+        else {
+          digitMilliseconds = "00$milliseconds";
+        }
+        digitSeconds = (seconds >= 10) ?"$seconds":"0$seconds";
+        digitMinutes = (minutes >= 10) ?"$minutes":"0$minutes";
+          
+      });
+     });
+  }
 
   void arming() {
     if(_armed) {
@@ -71,9 +162,19 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                   const SizedBox(width: 10.0,),
                   Expanded(
                     child: RawMaterialButton(
-                      onPressed: () {},
+                      onPressed: reset,
                       shape: const StadiumBorder(side: BorderSide(color: Color.fromARGB(255, 48, 75, 165))),
                       child: const Text('Reset',
+                        style: TextStyle(color:  Color.fromARGB(255, 255, 255, 255))
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10.0,),
+                  Expanded(
+                    child: RawMaterialButton(
+                      onPressed: () { (!started) ? start() : stop();},
+                      shape: const StadiumBorder(side: BorderSide(color: Color.fromARGB(255, 48, 75, 165))),
+                      child: const Text('Start',
                         style: TextStyle(color:  Color.fromARGB(255, 255, 255, 255))
                       ),
                     ),
@@ -81,16 +182,16 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                 ],
               ),
               Container(
-                height: 150.0,
+                height: 100.0,
                 decoration: BoxDecoration(
                   color: Color.fromARGB(127, 122, 122, 122),
                   borderRadius: BorderRadius.circular(6.0)
                 ),
                 child: Center(
-                  child: Text('00:00:00',
+                  child: Text('$digitMinutes:$digitSeconds.$digitMilliseconds',
                     style: TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
-                      fontSize: 82.0,
+                      fontSize: 75.0,
                       fontWeight: FontWeight.w600
                       ),
                   ),
@@ -136,10 +237,28 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                 ),
               ),
               Container(
-                height: 200.0,
+                height: 250.0,
                 decoration: BoxDecoration(
                   color: Color.fromARGB(127, 122, 122, 122),
                   borderRadius: BorderRadius.circular(6.0)
+                ),
+                child: ListView.builder(
+                  itemCount: logs.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Cycle ${index+1}', style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
+                          Text("${logs[index]}", style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
+                          IconButton(onPressed: () { setState(() {
+                            logs.removeAt(index);
+                          });}, icon: Icon(Icons.cancel)),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
