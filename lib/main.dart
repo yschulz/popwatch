@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:math';
+import 'package:noise_meter/noise_meter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:mic_stream/mic_stream.dart';
 
 void main(List<String> args) {
   runApp(PopWatch());
@@ -45,72 +43,69 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   bool _armed = false;
   String _armedText = 'Arm';
 
-  Stream? _stream;
-  late StreamSubscription _listener;
-  List<int>? _currentSamples = [];
-  List<int> _visibleSamples = [];
-  int? _localMax;
-  int? _localMin;
+  double _sensitivity = 100.0;
+  double _meanDecibel = 0;
+
   bool _isRecording = false;
-  late bool _isActive = false;
-  late int _bytesPerSample;
-  late int _samplesPerSecond;
+  StreamSubscription<NoiseReading>? _noiseSubscription;
+  late NoiseMeter _noiseMeter;
 
-  Future<bool> _startListening() async {
-    if(_isRecording) return false;
-
-    MicStream.shouldRequestPermission(true);
-
-    _stream = await MicStream.microphone(
-      audioSource: AudioSource.DEFAULT,
-      sampleRate: 44100,
-      channelConfig: ChannelConfig.CHANNEL_IN_MONO,
-      audioFormat: AudioFormat.ENCODING_PCM_16BIT,
-    );
-    setState(() {
-      _isRecording = true;
-    });
-    _visibleSamples = [];
-    _listener = _stream!.listen(_calculateIntensitySamples);
-    return true;
+  @override
+  void initState() {
+    super.initState();
+    _noiseMeter = new NoiseMeter(onError);
+  }
+  @override
+  void dispose() {
+    _noiseSubscription?.cancel();
+    super.dispose();
   }
 
-  void _calculateIntensitySamples(samples) {
-    _currentSamples ??= [];
-    int currentSample = 0;
-    eachWithIndex(samples, (i, int sample) {
-      currentSample += sample;
-      if ((i % _bytesPerSample) == _bytesPerSample-1) {
-        _currentSamples!.add(currentSample);
-        currentSample = 0;
+  void onData(NoiseReading noiseReading) {
+    this.setState(() {
+      if (!this._isRecording) {
+        this._isRecording = true;
+      }
+      _meanDecibel = noiseReading.meanDecibel;
+      if(_meanDecibel > _sensitivity){
+        if(!_started) {
+          timerStart();
+        } else {
+          timerStop();
+        }
       }
     });
+    print(noiseReading.toString());
+  }
 
-    if (_currentSamples!.length >= _samplesPerSecond/10) {
-      _visibleSamples.add(_currentSamples!.map((i) => i).toList().reduce((a, b) => a+b));
-      _localMax ??= _visibleSamples.last;
-      _localMin ??= _visibleSamples.last;
-      _localMax = max(_localMax!, _visibleSamples.last);
-      _localMin = min(_localMin!, _visibleSamples.last);
-      _currentSamples = [];
-      setState(() {  });
+  void onError(Object error) {
+    print(error.toString());
+    _isRecording = false;
+  }
+
+  void noiseMeterStart() async {
+    try {
+      _noiseSubscription = _noiseMeter.noiseStream.listen(onData);
+    } catch (err) {
+      print(err);
     }
   }
 
-  bool _stopListening() {
-    if(!_isRecording) return false;
-    _listener.cancel();
-
-    setState(() {
-      _isRecording = false;
-      _currentSamples = null;
-    });
-    return true;
+  void noiseMeterStop() async {
+    try {
+      if (_noiseSubscription != null) {
+        _noiseSubscription!.cancel();
+        _noiseSubscription = null;
+      }
+      this.setState(() {
+        this._isRecording = false;
+      });
+    } catch (err) {
+      print('stopRecorder error: $err');
+    }
   }
 
-  double _sensitivity = 100.0;
-
-  void stop() {
+  void timerStop() {
     _timer!.cancel();
     setState(() {
       _started = false;
@@ -141,7 +136,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
     });
   }
 
-  void start() {
+  void timerStart() {
     _started = true;
     _timer = Timer.periodic(Duration(milliseconds: 10), (_timer) {
       int localMilliseconds =_milliseconds + 10;
@@ -176,9 +171,12 @@ class _PopWatchHomeState extends State<PopWatchHome> {
       if(_armed) {
         _armed = false;
         _armedText = 'Arm';
+        noiseMeterStop();
+        timerStop();
       } else {
         _armed = true;
         _armedText = 'Armed!';
+        noiseMeterStart();
       }      
     });
   }
@@ -230,7 +228,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                   const SizedBox(width: 10.0,),
                   Expanded(
                     child: RawMaterialButton(
-                      onPressed: () { (!_started) ? start() : stop();},
+                      onPressed: () { (!_started) ? timerStart() : timerStop();},
                       shape: const StadiumBorder(side: BorderSide(color: Color.fromARGB(255, 48, 75, 165))),
                       child: const Text('Start',
                         style: TextStyle(color:  Color.fromARGB(255, 255, 255, 255))
@@ -350,18 +348,9 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   }
 }
 
-Iterable<T> eachWithIndex<E, T>(
-    Iterable<T> items, E Function(int index, T item) f) {
-  var index = 0;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  for (final item in items) {
-    f(index, item);
-    index = index + 1;
-  }
-
-  return items;
-}
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // import 'package:flutter/material.dart';
 
 // void main() {
