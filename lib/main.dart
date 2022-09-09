@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:noise_meter/noise_meter.dart';
 import 'package:flutter/material.dart';
+import 'package:popwatch/gauge/gauge_driver.dart';
+import 'package:popwatch/gauge/animated_gauge.dart';
+
 
 void main(List<String> args) {
   runApp(PopWatch());
@@ -43,17 +46,22 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   bool _armed = false;
   String _armedText = 'Arm';
 
-  double _sensitivity = 100.0;
-  double _meanDecibel = 0;
+  double _sensitivity = 70.0;
+  double _meanDecibel = 0.0;
+  double _maxDecibel = 70.0;
 
   bool _isRecording = false;
   StreamSubscription<NoiseReading>? _noiseSubscription;
   late NoiseMeter _noiseMeter;
 
+  GaugeDriver _driver = GaugeDriver();
+  final Key animatedKey = const Key('animatedKey');
+
   @override
   void initState() {
     super.initState();
     _noiseMeter = new NoiseMeter(onError);
+    _driver.listen((x) => setState(() { }) );
   }
   @override
   void dispose() {
@@ -62,9 +70,9 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   }
 
   void onData(NoiseReading noiseReading) {
-    this.setState(() {
-      if (!this._isRecording) {
-        this._isRecording = true;
+    setState(() {
+      if (!_isRecording) {
+        _isRecording = true;
       }
       _meanDecibel = noiseReading.meanDecibel;
       if(_meanDecibel > _sensitivity){
@@ -75,6 +83,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
         }
       }
     });
+    _driver.drive((_meanDecibel / _maxDecibel).abs());
     print(noiseReading.toString());
   }
 
@@ -97,12 +106,13 @@ class _PopWatchHomeState extends State<PopWatchHome> {
         _noiseSubscription!.cancel();
         _noiseSubscription = null;
       }
-      this.setState(() {
-        this._isRecording = false;
+      setState(() {
+        _isRecording = false;
       });
     } catch (err) {
       print('stopRecorder error: $err');
     }
+    _driver.drive(0.0);
   }
 
   void timerStop() {
@@ -268,7 +278,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                       Text('Sensitivity',
                         style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                       ),
-                      Slider(min: 0.0, max: 100.0, value: _sensitivity, onChanged: setSensitivity)
+                      Slider(min: 0.0, max: _maxDecibel, value: _sensitivity, onChanged: setSensitivity)
                     ],
                   ),
                 ),
@@ -285,9 +295,10 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: 6.0),
-                      Text('Gain',
+                      Text('Decibel',
                         style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                       ),
+                      AnimatedGauge(key: animatedKey, driver: _driver),
                     ],
                   ),
                 ),
