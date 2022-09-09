@@ -32,7 +32,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   int seconds = 0;
   int minutes = 0;
   
-  String digitMilliseconds = '000';
+  String digitMilliseconds = '00';
   String digitSeconds = '00';
   String digitMinutes = '00';
 
@@ -59,7 +59,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
       seconds = 0;
       minutes = 0;
 
-      digitMilliseconds = '000';
+      digitMilliseconds = '00';
       digitSeconds = '00';
       digitMinutes = '00';
 
@@ -77,20 +77,19 @@ class _PopWatchHomeState extends State<PopWatchHome> {
 
   void start() {
     started = true;
-    timer = Timer.periodic(Duration(milliseconds: 1), (timer) {
-      int localMilliseconds = milliseconds + 1;
+    timer = Timer.periodic(Duration(milliseconds: 10), (timer) {
+      int localMilliseconds = milliseconds + 10;
       int localSeconds = seconds;
       int localMinutes = minutes;
 
-      if(localMilliseconds > 999) {
-        if(localSeconds > 59) {
+      if(localMilliseconds > 990) {
+        if(localSeconds > 58) {
           localMinutes++;
           localSeconds = 0;
-        }
-        else {
+        } else {
           localSeconds++;
-          localMilliseconds = 0;
         }
+        localMilliseconds = 0;
       }
 
       setState(() {
@@ -98,17 +97,18 @@ class _PopWatchHomeState extends State<PopWatchHome> {
         seconds = localSeconds;
         minutes = localMinutes;
 
-        if(milliseconds >= 10) {
-          if(milliseconds >= 100) {
-            digitMilliseconds = "$milliseconds";
-          }
-          else {
-            digitMilliseconds = "0$milliseconds";
-          }
-        }
-        else {
-          digitMilliseconds = "00$milliseconds";
-        }
+        // if(milliseconds >= 10) {
+        //   if(milliseconds >= 100) {
+        //     digitMilliseconds = "$milliseconds";
+        //   }
+        //   else {
+        //     digitMilliseconds = "0$milliseconds";
+        //   }
+        // }
+        // else {
+        //   digitMilliseconds = "00$milliseconds";
+        // }
+        digitMilliseconds = (milliseconds ~/ 10 >= 10) ?"${milliseconds ~/ 10}":"0${milliseconds ~/ 10}";
         digitSeconds = (seconds >= 10) ?"$seconds":"0$seconds";
         digitMinutes = (minutes >= 10) ?"$minutes":"0$minutes";
           
