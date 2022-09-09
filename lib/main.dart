@@ -39,6 +39,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   Timer? timer;
   bool started = false;
   List logs = [];
+  List textController = [];
 
   bool _armed = false;
   double _sensitivity = 100.0;
@@ -70,12 +71,7 @@ class _PopWatchHomeState extends State<PopWatchHome> {
     String cycle = "$digitMinutes:$digitSeconds:$digitMilliseconds";
     setState(() {
       logs.add(cycle);
-    });
-  }
-
-  void deleteElementCycle(index) {
-    setState(() {
-      logs.removeAt(index);
+      textController.add(TextEditingController());
     });
   }
 
@@ -248,24 +244,25 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(16.0, 1.0, 5.0, 1.0),
                       child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Cycle ${index+1}', style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
                           SizedBox(width: 10.0),
                           Expanded(
                             child: SizedBox(height: 25.0, 
                               child: TextField(
+                                controller: textController[index],
                                 style: TextStyle(
                                   color: Colors.white
                                 ),
+                                maxLength: 30,
                                 decoration: InputDecoration(
+                                  counterText: "",
                                   border: OutlineInputBorder(
                                     borderSide: BorderSide.none,
                                     borderRadius: BorderRadius.circular(50)
                                   ),
                                   filled: true,
                                   fillColor: Color.fromARGB(255, 41, 41, 41),
-                                  // contentPadding: EdgeInsets.symmetric(vertical: 0.0),
                                 ),
                               ),
                             ),
@@ -274,6 +271,8 @@ class _PopWatchHomeState extends State<PopWatchHome> {
                           Text("${logs[index]}", style: TextStyle(color: Color.fromARGB(255, 255, 255, 255))),
                           IconButton(onPressed: () { setState(() {
                             logs.removeAt(index);
+                            textController[index].clear();
+                            textController.removeAt(index);
                           });}, icon: Icon(Icons.cancel)),
                         ],
                       ),
