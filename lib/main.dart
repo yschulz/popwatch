@@ -33,7 +33,8 @@ class _PopWatchHomeState extends State<PopWatchHome> {
   int _milliseconds = 0;
   int _seconds = 0;
   int _minutes = 0;
-  
+  bool _locked = false;
+
   String _digitMilliseconds = '00';
   String _digitSeconds = '00';
   String _digitMinutes = '00';
@@ -63,10 +64,18 @@ class _PopWatchHomeState extends State<PopWatchHome> {
     _noiseMeter = new NoiseMeter(onError);
     _driver.listen((x) => setState(() { }) );
   }
+  
   @override
   void dispose() {
     _noiseSubscription?.cancel();
     super.dispose();
+  }
+
+  void lockTimer() {
+    _locked = true;
+    Timer lockTimer = Timer(const Duration(seconds: 1), () {
+      setState(() {_locked = false; });
+    },);
   }
 
   void onData(NoiseReading noiseReading) {
@@ -76,15 +85,25 @@ class _PopWatchHomeState extends State<PopWatchHome> {
       }
       _meanDecibel = noiseReading.meanDecibel;
       if(_meanDecibel > _sensitivity){
-        if(!_started) {
-          timerStart();
-        } else {
-          timerStop();
+        // if(_seconds != _lockAtSecond) {
+        if(!_locked) {
+          if(!_started) {
+            timerStart();
+          } 
+          else  {
+            timerStop();
+          }
+          lockTimer();
         }
+      }
+      if(_meanDecibel > _maxDecibel) {
+        _maxDecibel = _meanDecibel;
       }
     });
     _driver.drive((_meanDecibel / _maxDecibel).abs());
     print(noiseReading.toString());
+    print(_locked);
+    
   }
 
   void onError(Object error) {
