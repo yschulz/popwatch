@@ -1,10 +1,11 @@
 # Popwatch App
 
+<img src="img/PopWatch.png" height=150px />
+
 ## Overview and Usage
+<img align="right" src="img/Emulator-Preview.png" height=500px />
 
 This is a basic app that solves an assortment of niche issues. The app can start a stopwatch without the involvement of hands or the delay and voice recognition issues of common used solutions. The stopwatch starts simply on a high decibel value from the microphone input stream. The same way that it is stopped. A reset button can reset the timer and logs the current elapsed time. Any cycle can be named or entirely removed from the logs. A manual override start and stop button was added as well.
-
-<img src="img/Emulator-Preview.png" height=500px />
 
 ## Application
 
